@@ -29,24 +29,31 @@ class CalculatorModel {
         case OperationWithoutArgument(String, () -> Double)
         case UnaryOperation(String, (Double) -> Double)
         case BinaryOperation(String, (Double, Double) -> Double)
+        case PercentOperation(String)
         case Operand(String, Operand)
         case Equals(String)
         case Reset
     }
     
+    private static let powerOf2Description = "\u{00B2}"
+    private static let powerOf3Description = "\u{00B3}"
+
     private var operations: Dictionary<String, Operation> = [
         "π" : Operation.Constant("π", Double.pi),
         "e" : Operation.Constant("e", M_E),
         "√" : Operation.UnaryOperation("√", sqrt),
         "cos" : Operation.UnaryOperation("cos", cos),
         "sin" : Operation.UnaryOperation("sin", sin),
+        "x²" : Operation.UnaryOperation(powerOf2Description, {pow($0, 2)}),
+        "x³" : Operation.UnaryOperation(powerOf3Description, {pow($0, 3)}),
         "+" : Operation.BinaryOperation("+", {$0+$1}),
         "-" : Operation.BinaryOperation("-", {$0-$1}),
         "×" : Operation.BinaryOperation("×", {$0*$1}),
         "÷" : Operation.BinaryOperation("÷", {$0/$1}),
         "±" : Operation.UnaryOperation("±", {-$0}),
         "=" : Operation.Equals("="),
-        "0～1" : Operation.OperationWithoutArgument("0～1", {_ in Double(arc4random())/Double(UINT32_MAX)}),
+        "0～1" : Operation.OperationWithoutArgument("0～1", { Double(arc4random())/Double(UINT32_MAX)}),
+        "%" : Operation.PercentOperation("%"),
         "C" : Operation.Reset,
     ]
     
@@ -122,10 +129,17 @@ class CalculatorModel {
                 }
             case .UnaryOperation(let description, let function):
                 accumulator = function(accumulator)
-                if accumulatorDescription.isEmpty {
-                    calculatorDescription = description + "(" + calculatorDescription + ")"
+                let prevOperationDescr =  (accumulatorDescription.isEmpty ? calculatorDescription : accumulatorDescription)
+                var thisOperationDescr = "(" + prevOperationDescr + ")"
+                if description == CalculatorModel.powerOf2Description || description == CalculatorModel.powerOf3Description {
+                    thisOperationDescr = thisOperationDescr + description
                 } else {
-                    calculatorDescription += " " + description + "(" + accumulatorDescription + ")"
+                    thisOperationDescr = description + thisOperationDescr
+                }
+                if accumulatorDescription.isEmpty {
+                    calculatorDescription = thisOperationDescr
+                } else {
+                    calculatorDescription += " " + thisOperationDescr
                 }
                 accumulatorDescription = ""
             case .BinaryOperation(let description, let function):
@@ -161,10 +175,22 @@ class CalculatorModel {
                     accumulator = operationResult.result ?? 0
                 }
                 pendingOperation = nil
-
             case .Reset:
                 resetCalculator()
                 calculatorDescription = ""
+                accumulatorDescription = ""
+            case .PercentOperation(let description):
+                if (pendingOperation != nil) {
+                    accumulator = pendingOperation!.firstOperand / 100 * accumulator
+                } else {
+                    accumulator = accumulator / 100
+                }
+                
+                if accumulatorDescription.isEmpty {
+                    calculatorDescription = description + "(" + calculatorDescription + ")"
+                } else {
+                    calculatorDescription += " " + description + "(" + accumulatorDescription + ")"
+                }
                 accumulatorDescription = ""
             }
         }

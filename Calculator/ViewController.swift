@@ -29,19 +29,16 @@ class ViewController: UIViewController {
             if enteredString.characters.count==0 {
                 return
             }
-            enteredString = enteredString.substring(to: enteredString.index(before: enteredString.endIndex))
+            enteredString = String(enteredString[..<enteredString.index(before: enteredString.endIndex)])
             if enteredString != "" &&
-                enteredString.substring(from: enteredString.index(before: enteredString.endIndex))=="."
+                enteredString[enteredString.index(before: enteredString.endIndex)...]=="."
             {
-                enteredString = enteredString.substring(to: enteredString.index(before: enteredString.endIndex))
+                enteredString = String(enteredString[..<enteredString.index(before: enteredString.endIndex)])
             }
             if enteredString.isEmpty {
                 enteredString = " "
             }
             displayLabel.text = enteredString
-//            if let currentValue = Double(enteredString) {
-//                //calculatorModel.setOperand(operand: currentValue)
-//            }
             calculatorNumbersTaping = true
         } else {
             calculatorModel.undo()
